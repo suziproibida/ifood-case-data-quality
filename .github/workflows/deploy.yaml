@@ -25,6 +25,8 @@ jobs:
           pip install pytest flake8
 
       - name: Rodar testes
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           pytest tests/
 
