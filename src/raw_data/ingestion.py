@@ -83,8 +83,7 @@ def main() -> None:
             if not found:
                 print(f"Parando frota {service_type} e indo para a próxima.")
                 break
-
-        print(f"Finalizado download da frota: {service_type}")
+            print(f"Finalizado download da frota: {service_type}")
 
 
 if __name__ == "__main__":
