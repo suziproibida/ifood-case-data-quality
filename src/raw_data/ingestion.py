@@ -1,7 +1,6 @@
 from datetime import datetime
 from urllib.parse import urlparse
-
-import boto3
+from pathlib import Path
 import requests
 
 from config.read_config import read_config
@@ -18,7 +17,21 @@ RAW_DATA_PATH = config["paths"]["raw_data"]
 CHUNK_SIZE = config["download"]["chunk_size_mb"] * 1024 * 1024
 TIMEOUT = config["download"]["timeout_seconds"]
 
-s3_client = boto3.client("s3")
+
+# Lazy-loaded S3 client: import boto3 only when needed
+_s3_client = None
+
+
+def _get_s3_client():
+    global _s3_client
+    if _s3_client is None:
+        try:
+            import boto3
+        except Exception:
+            _s3_client = None
+            return None
+        _s3_client = boto3.client("s3")
+    return _s3_client
 
 
 def get_last_month_to_download(year: int) -> int:
@@ -33,6 +46,10 @@ def get_last_month_to_download(year: int) -> int:
     raise ValueError("O ano informado está no futuro.")
 
 
+def _is_s3_path(path) -> bool:
+    return isinstance(path, str) and path.startswith("s3://")
+
+
 def parse_s3_path(s3_path: str) -> tuple[str, str]:
     parsed = urlparse(s3_path)
     bucket = parsed.netloc
@@ -40,27 +57,38 @@ def parse_s3_path(s3_path: str) -> tuple[str, str]:
     return bucket, key
 
 
-def s3_object_exists(s3_path: str) -> bool:
-    bucket, key = parse_s3_path(s3_path)
+def s3_object_exists(path) -> bool:
+    if not _is_s3_path(path):
+        return Path(path).exists()
 
+    client = _get_s3_client()
+    if client is None:
+        return False
+
+    bucket, key = parse_s3_path(path)
     try:
-        s3_client.head_object(Bucket=bucket, Key=key)
+        client.head_object(Bucket=bucket, Key=key)
         return True
     except Exception:
         return False
 
 
-def upload_to_s3(content: bytes, output_s3_path: str) -> None:
-    bucket, key = parse_s3_path(output_s3_path)
+def upload_to_s3(content: bytes, output_path) -> None:
+    if not _is_s3_path(output_path):
+        p = Path(output_path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(content)
+        return
 
-    s3_client.put_object(
-        Bucket=bucket,
-        Key=key,
-        Body=content,
-    )
+    client = _get_s3_client()
+    if client is None:
+        raise RuntimeError("boto3 is required to upload to s3:// paths")
+
+    bucket, key = parse_s3_path(output_path)
+    client.put_object(Bucket=bucket, Key=key, Body=content)
 
 
-def download_file(url: str, output_s3_path: str) -> bool:
+def download_file(url: str, output_path) -> bool:
     try:
         response = requests.get(url, stream=True, timeout=TIMEOUT)
 
@@ -70,12 +98,23 @@ def download_file(url: str, output_s3_path: str) -> bool:
 
         response.raise_for_status()
 
-        upload_to_s3(
-            content=response.content,
-            output_s3_path=output_s3_path,
-        )
+        if not _is_s3_path(output_path):
+            p = Path(output_path)
+            p.parent.mkdir(parents=True, exist_ok=True)
 
-        print(f"Download concluído: {output_s3_path}")
+            with p.open("wb") as f:
+                for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
+                    if chunk:
+                        f.write(chunk)
+
+            print(f"Download concluído: {output_path}")
+            return True
+
+        # s3:// path: collect bytes and upload
+        content = b"".join(response.iter_content(chunk_size=CHUNK_SIZE))
+        upload_to_s3(content=content, output_path=output_path)
+
+        print(f"Download concluído: {output_path}")
         return True
 
     except requests.exceptions.RequestException as error:
@@ -95,7 +134,7 @@ def main() -> None:
             file_name = f"{service_type}_tripdata_{YEAR}-{month_str}.parquet"
             url = f"{BASE_URL}/{file_name}"
 
-            output_s3_path = (
+            output_path = (
                 f"{RAW_DATA_PATH}"
                 f"{service_type}/"
                 f"year={YEAR}/"
@@ -103,11 +142,11 @@ def main() -> None:
                 f"{file_name}"
             )
 
-            if s3_object_exists(output_s3_path):
-                print(f"Arquivo já existe, ignorando: {output_s3_path}")
+            if s3_object_exists(output_path):
+                print(f"Arquivo já existe, ignorando: {output_path}")
                 continue
 
-            found = download_file(url, output_s3_path)
+            found = download_file(url, output_path)
 
             if not found:
                 print(f"Parando frota {service_type} e indo para a próxima.")
