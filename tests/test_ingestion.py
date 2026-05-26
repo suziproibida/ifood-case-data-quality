@@ -59,8 +59,8 @@ def test_download_file_returns_false_when_file_is_unavailable(
     monkeypatch.setattr(ingestion.requests, "get", fake_get)
 
     output_path = tmp_path / "file.parquet"
-
-    result = ingestion.download_file("https://example.com/file.parquet", output_path)
+    url = "https://example.com/file.parquet"
+    result = ingestion.download_file(url, output_path)
 
     assert result is False
     assert not output_path.exists()
@@ -75,23 +75,24 @@ def test_download_file_success(monkeypatch, tmp_path):
     monkeypatch.setattr(ingestion.requests, "get", fake_get)
 
     output_path = tmp_path / "folder" / "file.parquet"
-
-    result = ingestion.download_file("https://example.com/file.parquet", output_path)
+    url = "https://example.com/file.parquet"
+    result = ingestion.download_file(url, output_path)
 
     assert result is True
     assert output_path.exists()
     assert output_path.read_bytes() == b"part1part2"
 
 
-def test_download_file_returns_false_on_request_exception(monkeypatch, tmp_path):
+def test_download_file_returns_false_on_request_exception(monkeypatch, 
+                                                          tmp_path):
     def fake_get(url, stream, timeout):
         raise requests.exceptions.Timeout("timeout error")
 
     monkeypatch.setattr(ingestion.requests, "get", fake_get)
 
     output_path = tmp_path / "file.parquet"
-
-    result = ingestion.download_file("https://example.com/file.parquet", output_path)
+    url = "https://example.com/file.parquet"
+    result = ingestion.download_file(url, output_path)
 
     assert result is False
     assert not output_path.exists()
@@ -104,8 +105,8 @@ def test_download_file_returns_false_on_http_error(monkeypatch, tmp_path):
     monkeypatch.setattr(ingestion.requests, "get", fake_get)
 
     output_path = tmp_path / "file.parquet"
-
-    result = ingestion.download_file("https://example.com/file.parquet", output_path)
+    url = "https://example.com/file.parquet"
+    result = ingestion.download_file(url, output_path)
 
     assert result is False
     assert not output_path.exists()
@@ -144,9 +145,10 @@ def test_main_downloads_until_first_missing_file_and_moves_to_next_service(
 
     called_urls = [call[0] for call in calls]
 
+    url = "https://example.com/yellow_tripdata_2026-03.parquet"
     assert "https://example.com/yellow_tripdata_2026-01.parquet" in called_urls
     assert "https://example.com/yellow_tripdata_2026-02.parquet" in called_urls
-    assert "https://example.com/yellow_tripdata_2026-03.parquet" not in called_urls
+    assert url not in called_urls
 
     assert "https://example.com/green_tripdata_2026-01.parquet" in called_urls
     assert "https://example.com/green_tripdata_2026-02.parquet" in called_urls
