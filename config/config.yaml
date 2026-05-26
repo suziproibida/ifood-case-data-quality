@@ -1,0 +1,23 @@
+aws:
+  bucket_name: "ifood-case-data-quality"
+
+paths:
+  raw_data: "s3://ifood-case-data-quality/raw-data/"
+  landing_data: "s3://ifood-case-data-quality/landing-data/"
+  trusted_data: "s3://ifood-case-data-quality/trusted-data/"
+  consumption_data: "s3://ifood-case-data-quality/consumption-data/"
+  rejected_data: "s3://ifood-case-data-quality/rejected-data/"
+  audit_data: "s3://ifood-case-data-quality/audit-data/"
+
+nyc_taxi:
+  base_url: "https://d37ci6vzurychx.cloudfront.net/trip-data"
+  year: 2026
+  service_types:
+    - yellow
+    - green
+    - fhv
+    - fhvhv
+
+download:
+  chunk_size_mb: 10
+  timeout_seconds: 60
