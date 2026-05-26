@@ -1,6 +1,6 @@
 import pytest
 import requests
-from raw_data import ingestion
+from src.raw_data import ingestion
 
 
 class FakeDatetime:
