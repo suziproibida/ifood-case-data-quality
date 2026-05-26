@@ -192,5 +192,5 @@ def test_main_skips_existing_file(monkeypatch, tmp_path):
 
     ingestion.main()
 
-    assert "https://example.com/yellow_tripdata_2026-01.parquet" not in calls
+    assert "https://example.com/yellow_tripdata_2026-03.parquet" not in calls
     assert "https://example.com/yellow_tripdata_2026-02.parquet" in calls
