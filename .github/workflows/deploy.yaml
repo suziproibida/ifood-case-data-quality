@@ -45,3 +45,4 @@ jobs:
         run: |
           aws s3 sync src/ s3://ifood-case-data-quality/scripts/src/ --delete
           aws s3 sync config/ s3://ifood-case-data-quality/scripts/config/ --delete
+          aws s3 sync libs/ s3://ifood-case-data-quality/scripts/libs/ --delete
