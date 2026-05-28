@@ -565,6 +565,126 @@ display(df)
 
 ---
 
+# CI/CD e Automação da Pipeline
+
+## Objetivo
+
+Foi implementado um fluxo de CI/CD para automatizar a validação e execução da pipeline de engenharia de dados, garantindo:
+
+* Padronização de deploy
+* Versionamento do código
+* Automatização das execuções
+* Confiabilidade da pipeline
+* Governança de alterações
+* Integração contínua
+
+---
+
+## Arquitetura de CI/CD
+
+```text
+GitHub
+↓
+GitHub Actions
+↓
+AWS
+├── S3
+├── IAM
+└── Databricks
+↓
+Delta Lake
+↓
+Unity Catalog
+```
+---
+
+## GitHub Actions
+
+Foi utilizado GitHub Actions para automatizar:
+
+* Execução de validações
+* Testes de código
+* Deploy automatizado
+* Publicação de artefatos
+* Execução de pipelines
+
+---
+
+## Workflow CI/CD
+
+Exemplo de workflow:
+
+```yaml
+name: databricks-pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest tests/
+
+      - name: Deploy scripts
+        run: |
+          echo "Deploy pipeline"
+```
+
+---
+
+## Integração com AWS
+
+A integração com AWS foi realizada utilizando:
+
+* IAM Role
+* Storage Credential
+* Unity Catalog
+* External Locations
+
+O acesso ao S3 ocorre de forma segura sem utilização de Access Keys hardcoded.
+
+Fluxo:
+
+```text
+Databricks
+↓
+Storage Credential
+↓
+IAM Role
+↓
+AWS S3
+```
+
+## Benefícios do CI/CD
+
+* Redução de erros manuais
+* Maior confiabilidade
+* Padronização dos processos
+* Rastreabilidade de alterações
+* Escalabilidade operacional
+* Reprodutibilidade do ambiente
+* Facilidade de manutenção
+
+
 # Benefícios da Arquitetura
 
 * Arquitetura Lakehouse
