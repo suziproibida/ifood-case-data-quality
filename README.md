@@ -181,8 +181,6 @@ CREATE CATALOG IF NOT EXISTS ifood;
 ## Criação dos schemas
 
 ```sql
-CREATE SCHEMA IF NOT EXISTS ifood.raw;
-
 CREATE SCHEMA IF NOT EXISTS ifood.landing;
 
 CREATE SCHEMA IF NOT EXISTS ifood.trusted;
@@ -258,7 +256,6 @@ Tipos de datasets utilizados:
 
 * Yellow Taxi
 * Green Taxi
-* FHV Taxi
 
 Os dados incluem informações como:
 
@@ -514,7 +511,6 @@ Foi realizado o UNION dos datasets:
 
 * Yellow Taxi
 * Green Taxi
-* FHV Taxi
 
 Exemplo:
 
@@ -522,7 +518,6 @@ Exemplo:
 df_consumption = (
     df_yellow
     .unionByName(df_green)
-    .unionByName(df_fhv)
 )
 ```
 
